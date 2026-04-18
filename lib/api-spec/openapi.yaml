@@ -3,13 +3,24 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CineConnect API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User profile operations
+  - name: projects
+    description: Film project/job posting operations
+  - name: messages
+    description: Chat/messaging operations
+  - name: reviews
+    description: Rating and review operations
+  - name: notifications
+    description: Notification operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +35,521 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Users / Profiles ───────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Profile not found
+    put:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List/search users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: skill
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+
+  /users/{userId}:
+    get:
+      operationId: getUserById
+      tags: [users]
+      summary: Get user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Not found
+
+  /users/{userId}/view:
+    post:
+      operationId: recordProfileView
+      tags: [users]
+      summary: Record a profile view
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: View recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
+
+  /users/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      summary: Block a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User blocked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
+
+  /users/stats/feed:
+    get:
+      operationId: getFeedStats
+      tags: [users]
+      summary: Get feed/discovery stats (total users by role, recent joiners)
+      responses:
+        "200":
+          description: Feed stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedStats"
+
+  # ─── Projects / Job Posts ───────────────────────────────────────────────────
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List film projects/job postings
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectListResponse"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project posting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get project by ID
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProjectBody"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /projects/{projectId}/apply:
+    post:
+      operationId: applyToProject
+      tags: [projects]
+      summary: Apply to a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplyProjectBody"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectApplication"
+
+  /projects/{projectId}/bookmark:
+    post:
+      operationId: bookmarkProject
+      tags: [projects]
+      summary: Bookmark/unbookmark a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bookmark toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookmarked:
+                    type: boolean
+                required: [bookmarked]
+
+  /projects/my/bookmarks:
+    get:
+      operationId: getMyBookmarks
+      tags: [projects]
+      summary: Get current user's bookmarked projects
+      responses:
+        "200":
+          description: Bookmarked projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+  /projects/my/posts:
+    get:
+      operationId: getMyProjects
+      tags: [projects]
+      summary: Get projects posted by current user
+      responses:
+        "200":
+          description: User's projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+
+  # ─── Messages / Chat ────────────────────────────────────────────────────────
+  /messages/conversations:
+    get:
+      operationId: listConversations
+      tags: [messages]
+      summary: List all conversations for the current user
+      responses:
+        "200":
+          description: Conversations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+
+  /messages/conversations/{conversationId}:
+    get:
+      operationId: getMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: before
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+  /messages/send:
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message (creates conversation if needed)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageBody"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /messages/unread-count:
+    get:
+      operationId: getUnreadCount
+      tags: [messages]
+      summary: Get total unread message count for current user
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                required: [count]
+
+  # ─── Reviews ────────────────────────────────────────────────────────────────
+  /reviews/{userId}:
+    get:
+      operationId: getUserReviews
+      tags: [reviews]
+      summary: Get reviews for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Create or update a review for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReviewBody"
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  # ─── Notifications ──────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
+
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +560,401 @@ components:
       required:
         - status
 
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        clerkId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+          description: "Actor | Director | Cameraman | Editor | Music | Writer | Producer | Other"
+        bio:
+          type: ["string", "null"]
+        skills:
+          type: array
+          items:
+            type: string
+        location:
+          type: ["string", "null"]
+        portfolioUrl:
+          type: ["string", "null"]
+        portfolioImages:
+          type: array
+          items:
+            type: string
+        isVerified:
+          type: boolean
+        onlineStatus:
+          type: string
+          description: "online | offline | away"
+        averageRating:
+          type: ["number", "null"]
+        totalReviews:
+          type: integer
+        totalProjectsPosted:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - clerkId
+        - name
+        - email
+        - role
+        - skills
+        - portfolioImages
+        - isVerified
+        - onlineStatus
+        - totalReviews
+        - totalProjectsPosted
+        - createdAt
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        bio:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+        portfolioUrl:
+          type: string
+        portfolioImages:
+          type: array
+          items:
+            type: string
+        avatarUrl:
+          type: string
+        onlineStatus:
+          type: string
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit
+
+    FeedStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        roleBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              count:
+                type: integer
+            required: [role, count]
+        recentJoiners:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        activeProjects:
+          type: integer
+      required:
+        - totalUsers
+        - roleBreakdown
+        - recentJoiners
+        - activeProjects
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        requiredRoles:
+          type: array
+          items:
+            type: string
+        location:
+          type: ["string", "null"]
+        isRemote:
+          type: boolean
+        status:
+          type: string
+          description: "open | closed | in-progress"
+        posterUserId:
+          type: string
+        posterName:
+          type: string
+        posterAvatarUrl:
+          type: ["string", "null"]
+        posterRole:
+          type: string
+        applicationCount:
+          type: integer
+        isBookmarked:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - requiredRoles
+        - isRemote
+        - status
+        - posterUserId
+        - posterName
+        - posterRole
+        - applicationCount
+        - isBookmarked
+        - createdAt
+        - updatedAt
+
+    ProjectListResponse:
+      type: object
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - projects
+        - total
+        - page
+        - limit
+
+    CreateProjectBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        requiredRoles:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+        isRemote:
+          type: boolean
+      required:
+        - title
+        - description
+        - requiredRoles
+
+    ProjectApplication:
+      type: object
+      properties:
+        id:
+          type: integer
+        projectId:
+          type: integer
+        applicantUserId:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - applicantUserId
+        - message
+        - status
+        - createdAt
+
+    ApplyProjectBody:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        otherUserId:
+          type: string
+        otherUserName:
+          type: string
+        otherUserAvatarUrl:
+          type: ["string", "null"]
+        otherUserRole:
+          type: string
+        lastMessage:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: ["string", "null"]
+        unreadCount:
+          type: integer
+      required:
+        - id
+        - otherUserId
+        - otherUserName
+        - otherUserRole
+        - unreadCount
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderUserId:
+          type: string
+        senderName:
+          type: string
+        senderAvatarUrl:
+          type: ["string", "null"]
+        content:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - conversationId
+        - senderUserId
+        - senderName
+        - content
+        - isRead
+        - createdAt
+
+    SendMessageBody:
+      type: object
+      properties:
+        recipientUserId:
+          type: string
+        content:
+          type: string
+      required:
+        - recipientUserId
+        - content
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        reviewerUserId:
+          type: string
+        reviewerName:
+          type: string
+        reviewerAvatarUrl:
+          type: ["string", "null"]
+        revieweeUserId:
+          type: string
+        rating:
+          type: integer
+          description: "1 to 5"
+        comment:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - reviewerUserId
+        - reviewerName
+        - revieweeUserId
+        - rating
+        - createdAt
+
+    ReviewListResponse:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        averageRating:
+          type: ["number", "null"]
+        total:
+          type: integer
+      required:
+        - reviews
+        - total
+
+    CreateReviewBody:
+      type: object
+      properties:
+        rating:
+          type: integer
+        comment:
+          type: string
+      required:
+        - rating
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        type:
+          type: string
+          description: "new_message | new_project | profile_view | new_application | new_review"
+        title:
+          type: string
+        body:
+          type: string
+        isRead:
+          type: boolean
+        relatedUserId:
+          type: ["string", "null"]
+        relatedProjectId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - type
+        - title
+        - body
+        - isRead
+        - createdAt
