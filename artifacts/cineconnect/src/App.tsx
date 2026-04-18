@@ -1,15 +1,14 @@
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from '@clerk/react';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
-// Components
 import AppLayout from "./components/layout/AppLayout";
+import { WelcomeAnimation } from "./components/WelcomeAnimation";
 
-// Pages
 import Landing from "./pages/Landing";
 import Feed from "./pages/Feed";
 import Projects from "./pages/Projects";
@@ -25,6 +24,8 @@ import Bookmarks from "./pages/Bookmarks";
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const WELCOME_SHOWN_KEY = "cc_welcome_shown";
 
 function stripBase(path: string): string {
   return basePath && path.startsWith(basePath)
@@ -109,7 +110,11 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
-function ClerkQueryClientCacheInvalidator() {
+function ClerkQueryClientCacheInvalidator({
+  onSignIn,
+}: {
+  onSignIn: () => void;
+}) {
   const { addListener } = useClerk();
   const queryClient = useQueryClient();
   const prevUserIdRef = useRef<string | null | undefined>(undefined);
@@ -117,22 +122,33 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
+
       if (
         prevUserIdRef.current !== undefined &&
         prevUserIdRef.current !== userId
       ) {
         queryClient.clear();
+
+        // User just signed in (was null/different, now has an id)
+        if (userId && !sessionStorage.getItem(WELCOME_SHOWN_KEY)) {
+          onSignIn();
+        }
       }
+
       prevUserIdRef.current = userId;
     });
     return unsubscribe;
-  }, [addListener, queryClient]);
+  }, [addListener, queryClient, onSignIn]);
 
   return null;
 }
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  const handleSignIn = () => setShowWelcome(true);
+  const handleWelcomeDone = () => setShowWelcome(false);
 
   return (
     <ClerkProvider
@@ -143,12 +159,17 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
+        <ClerkQueryClientCacheInvalidator onSignIn={handleSignIn} />
+
+        {showWelcome && (
+          <WelcomeAnimation onDone={handleWelcomeDone} />
+        )}
+
         <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/sign-in/*?" component={SignInPage} />
           <Route path="/sign-up/*?" component={SignUpPage} />
-          
+
           <Route path="/feed" component={() => <ProtectedRoute component={Feed} />} />
           <Route path="/projects" component={() => <ProtectedRoute component={Projects} />} />
           <Route path="/projects/new" component={() => <ProtectedRoute component={CreateProject} />} />
