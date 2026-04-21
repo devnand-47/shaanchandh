@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { X, Plus } from "lucide-react";
+import { X, Plus, LogOut } from "lucide-react";
+import { useClerk } from "@clerk/react";
+import { useLocation } from "wouter";
 
 const ROLES = ["Actor", "Director", "Cameraman", "Editor", "Music", "Writer", "Producer", "Other"];
 
@@ -16,6 +18,8 @@ export default function MyProfile() {
   const update = useUpdateMe();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { signOut } = useClerk();
+  const [, navigate] = useLocation();
 
   const [name, setName] = useState("");
   const [role, setRole] = useState("Other");
@@ -204,6 +208,21 @@ export default function MyProfile() {
             {update.isPending ? "Saving..." : "Save Profile"}
           </Button>
         </form>
+
+        {/* Sign out */}
+        <div className="mt-6 pt-6 border-t border-border">
+          <Button
+            variant="outline"
+            className="w-full gap-2 text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors"
+            onClick={() => {
+              sessionStorage.removeItem("cc_welcome_shown");
+              signOut(() => navigate("/"));
+            }}
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </div>
   );
