@@ -29,7 +29,7 @@ router.get("/messages/conversations", requireAuth, async (req, res): Promise<voi
     .orderBy(desc(conversationsTable.updatedAt));
 
   const enriched = await Promise.all(
-    conversations.map(async (conv) => {
+    conversations.map(async (conv: any) => {
       const otherUserId = conv.user1Id === userId ? conv.user2Id : conv.user1Id;
       const [otherUser] = await db.select().from(usersTable).where(eq(usersTable.id, otherUserId));
 
@@ -139,7 +139,7 @@ router.get("/messages/conversations/:conversationId", requireAuth, async (req, r
 
   // Enrich with sender info
   const enriched = await Promise.all(
-    messages.reverse().map(async (msg) => {
+    messages.reverse().map(async (msg: any) => {
       const [sender] = await db.select().from(usersTable).where(eq(usersTable.id, msg.senderUserId));
       return {
         ...msg,
