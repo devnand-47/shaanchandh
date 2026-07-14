@@ -32,7 +32,7 @@ async function getUserWithStats(userId: string) {
 
   const averageRating =
     reviewRows.length > 0
-      ? reviewRows.reduce((sum, r) => sum + r.rating, 0) / reviewRows.length
+      ? reviewRows.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0) / reviewRows.length
       : null;
 
   return {
@@ -143,7 +143,7 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
     .where(conditions.length > 0 ? and(...conditions) : undefined);
 
   const usersWithStats = await Promise.all(
-    users.map(async (u) => {
+    users.map(async (u: any) => {
       const reviewRows = await db
         .select({ rating: reviewsTable.rating })
         .from(reviewsTable)
@@ -152,7 +152,7 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
         ...u,
         averageRating:
           reviewRows.length > 0
-            ? reviewRows.reduce((s, r) => s + r.rating, 0) / reviewRows.length
+            ? reviewRows.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / reviewRows.length
             : null,
         totalReviews: reviewRows.length,
         totalProjectsPosted: 0,
@@ -242,7 +242,7 @@ router.get("/users/stats/feed", requireAuth, async (req, res): Promise<void> => 
     .orderBy(desc(usersTable.createdAt))
     .limit(6);
 
-  const recentJoiners = recentUsers.map((u) => ({
+  const recentJoiners = recentUsers.map((u: any) => ({
     ...u,
     averageRating: null,
     totalReviews: 0,
