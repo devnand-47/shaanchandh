@@ -25,7 +25,7 @@ router.get("/reviews/:userId", requireAuth, async (req, res): Promise<void> => {
     .where(eq(reviewsTable.revieweeUserId, params.data.userId));
 
   const enriched = await Promise.all(
-    reviews.map(async (r) => {
+    reviews.map(async (r: any) => {
       const [reviewer] = await db.select().from(usersTable).where(eq(usersTable.id, r.reviewerUserId));
       return {
         ...r,
