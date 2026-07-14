@@ -87,7 +87,7 @@ router.get("/messages/unread-count", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const convIds = myConversations.map((c) => c.id);
+  const convIds = myConversations.map((c: any) => c.id);
   const [result] = await db
     .select({ count: sql<number>`cast(count(*) as integer)` })
     .from(messagesTable)

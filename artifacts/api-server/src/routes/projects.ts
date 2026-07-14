@@ -88,7 +88,7 @@ router.get("/projects", requireAuth, async (req, res): Promise<void> => {
     .from(projectsTable)
     .where(and(...conditions));
 
-  const enriched = await Promise.all(projects.map((p) => enrichProject(p, userId)));
+  const enriched = await Promise.all(projects.map((p: any) => enrichProject(p, userId)));
 
   res.json(
     ListProjectsResponse.parse({
@@ -132,13 +132,13 @@ router.get("/projects/my/bookmarks", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const projectIds = bookmarks.map((b) => b.projectId);
+  const projectIds = bookmarks.map((b: any) => b.projectId);
   const projects = await db
     .select()
     .from(projectsTable)
     .where(inArray(projectsTable.id, projectIds));
 
-  const enriched = await Promise.all(projects.map((p) => enrichProject(p, userId)));
+  const enriched = await Promise.all(projects.map((p: any) => enrichProject(p, userId)));
   res.json(GetMyBookmarksResponse.parse(enriched));
 });
 
@@ -152,7 +152,7 @@ router.get("/projects/my/posts", requireAuth, async (req, res): Promise<void> =>
     .where(eq(projectsTable.posterUserId, userId))
     .orderBy(desc(projectsTable.createdAt));
 
-  const enriched = await Promise.all(projects.map((p) => enrichProject(p, userId)));
+  const enriched = await Promise.all(projects.map((p: any) => enrichProject(p, userId)));
   res.json(GetMyProjectsResponse.parse(enriched));
 });
 
