@@ -71,7 +71,7 @@ router.get("/projects", requireAuth, async (req, res): Promise<void> => {
       or(
         ilike(projectsTable.title, `%${search}%`),
         ilike(projectsTable.description, `%${search}%`)
-      )
+      )!
     );
   }
 
