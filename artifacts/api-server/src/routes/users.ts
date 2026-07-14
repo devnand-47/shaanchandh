@@ -55,7 +55,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
     let email = "";
     let avatarUrl: string | null = null;
     try {
-      const clerkUser = await clerkClient().users.getUser(userId);
+      const clerkUser = await clerkClient.users.getUser(userId);
       const firstName = clerkUser.firstName ?? "";
       const lastName = clerkUser.lastName ?? "";
       name = [firstName, lastName].filter(Boolean).join(" ") || clerkUser.username || "New User";
